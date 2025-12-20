@@ -1,73 +1,174 @@
-# React + TypeScript + Vite
+# 🎄 Christmas Tree 3D
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ứng dụng cây thông Noel 3D tương tác với Three.js và React Three Fiber, được điều khiển bằng cử chỉ tay.
 
-Currently, two official plugins are available:
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![React](https://img.shields.io/badge/React-19-61dafb)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
+![Three.js](https://img.shields.io/badge/Three.js-0.182-000000)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Tính năng
 
-## React Compiler
+- 🎄 **Cây thông 3D** với 25,000+ particles
+- 🖼️ **32 ảnh Polaroid** với hiệu ứng wobble
+- 🎁 **300 hộp quà** 3D với nơ vàng
+- 🔴 **400 quả cầu** trang trí với sparkle effect
+- 💡 **400 đèn LED** nhấp nháy đa màu
+- ⭐ **Ngôi sao vàng** quay trên đỉnh
+- 👋 **Điều khiển cử chỉ tay** với MediaPipe AI
+- 🎨 **Post-processing** effects (Bloom, Vignette)
+- 🌌 **5000 ngôi sao** background
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+## 🚀 Quick Start
 
-## Expanding the ESLint configuration
+### Yêu cầu
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Node.js >= 18
+- pnpm >= 8
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Cài đặt
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm dev
 ```
+
+Mở trình duyệt: `http://localhost:5173`
+
+### Build Production
+
+```bash
+pnpm build
+```
+
+### Preview Production
+
+```bash
+pnpm preview
+```
+
+## 🎮 Cách sử dụng
+
+### Điều khiển chuột
+- **Click & Drag**: Xoay camera
+- **Scroll**: Zoom in/out
+- **Button "Assemble Tree"**: Chuyển từ CHAOS → FORMED
+- **Button "Disperse"**: Chuyển từ FORMED → CHAOS
+
+### Điều khiển cử chỉ tay
+1. Bật camera (cho phép quyền truy cập)
+2. Đưa tay vào khung hình
+3. **Tay mở (Open Palm)** → CHAOS
+4. **Nắm đấm (Closed Fist)** → FORMED
+
+### Debug Mode
+- Click nút **🛠 DEBUG** để xem:
+  - Camera feed
+  - Hand tracking visualization
+  - Gesture detection status
+
+## 📚 Documentation
+
+Chi tiết trong thư mục [`docs/`](docs/):
+
+- **[Project Structure](docs/PROJECT_STRUCTURE.md)** - Tổng quan cấu trúc
+- **[Architecture](docs/ARCHITECTURE.md)** - Kiến trúc và SOLID principles
+- **[Components](docs/COMPONENTS.md)** - Chi tiết từng component
+- **[Development Guide](docs/DEVELOPMENT.md)** - Hướng dẫn phát triển
+- **[Refactoring Summary](docs/REFACTORING_SUMMARY.md)** - Quá trình refactoring
+
+## 🏗️ Kiến trúc
+
+Dự án tuân theo **Clean Architecture** và **SOLID Principles**:
+
+```
+src/
+├── components/          # React Components
+│   ├── 3d/             # 3D Scene Components (9 files)
+│   ├── UI/             # UI Components (3 files)
+│   └── GestureController.tsx
+├── constants/          # Configuration (1 file)
+├── hooks/              # Custom Hooks (3 files)
+├── shaders/            # GLSL Shaders (1 file)
+├── types/              # TypeScript Types (1 file)
+├── utils/              # Utilities (1 file)
+├── App.tsx             # Main App (35 lines)
+└── main.tsx            # Entry point
+```
+
+**Highlights**:
+- ✅ 28 files, avg 56 lines/file (was: 1 file, 1046 lines)
+- ✅ Full TypeScript type safety
+- ✅ Modular và dễ maintain
+- ✅ 100% giữ nguyên chức năng
+
+## 🛠️ Tech Stack
+
+| Category | Technologies |
+|----------|-------------|
+| **Framework** | React 19, TypeScript 5.9 |
+| **3D Engine** | Three.js 0.182, React Three Fiber 9 |
+| **3D Helpers** | @react-three/drei, @react-three/postprocessing |
+| **AI** | MediaPipe Tasks Vision |
+| **Build** | Vite 7 |
+| **Linting** | ESLint 9 |
+
+## 📊 Thống kê
+
+| Metric | Value |
+|--------|-------|
+| Total Components | 13 |
+| 3D Particles | 25,000 |
+| Photo Ornaments | 50 |
+| Christmas Balls | 400 |
+| Fairy Lights | 400 |
+| Gift Boxes | 300 |
+| Background Stars | 5,000 |
+| Source Files | 24 |
+| Lines of Code | ~1,343 |
+
+## 🧪 Testing
+
+```bash
+# Lint
+pnpm lint
+
+# Type check
+pnpm build
+```
+
+## 🤝 Contributing
+
+Contributions welcome! Vui lòng đọc [Development Guide](docs/DEVELOPMENT.md) trước khi contribute.
+
+### Guidelines
+1. Fork repo
+2. Tạo branch: `feature/your-feature`
+3. Follow code style trong [Development Guide](docs/DEVELOPMENT.md)
+4. Test kỹ
+5. Commit với message rõ ràng
+6. Tạo Pull Request
+
+## 📝 License
+
+MIT License - xem file [LICENSE](LICENSE)
+
+## 🙏 Credits
+
+- [Three.js](https://threejs.org/)
+- [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/)
+- [MediaPipe](https://developers.google.com/mediapipe)
+- [@react-three/drei](https://github.com/pmndrs/drei)
+
+## 📞 Support
+
+Có vấn đề? [Tạo issue](../../issues)
+
+---
+
+**Made with ❤️ and 🎄 | Merry Christmas! 🎅**
