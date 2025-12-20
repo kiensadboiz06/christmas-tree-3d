@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 import { useRef, useEffect } from 'react';
 import { GestureRecognizer, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
 import type { GestureControllerProps } from '../types';
@@ -57,10 +55,9 @@ export const GestureController = ({ onGesture, onStatus, debugMode }: GestureCon
               for (const landmarks of results.landmarks) {
                 const drawingUtils = new DrawingUtils(ctx);
                 drawingUtils.drawConnectors(landmarks, GestureRecognizer.HAND_CONNECTIONS, {
-                  color: '#FFD700',
                   lineWidth: 2
                 });
-                drawingUtils.drawLandmarks(landmarks, { color: '#FF0000', lineWidth: 1 });
+                drawingUtils.drawLandmarks(landmarks, { lineWidth: 1 });
               }
           } else if (ctx && !debugMode) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
@@ -117,4 +114,3 @@ export const GestureController = ({ onGesture, onStatus, debugMode }: GestureCon
     </>
   );
 };
-

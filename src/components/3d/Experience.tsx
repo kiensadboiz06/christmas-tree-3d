@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 import { Suspense } from 'react';
 import { Foliage } from './Foliage';
 import { PhotoOrnaments } from './PhotoOrnaments';

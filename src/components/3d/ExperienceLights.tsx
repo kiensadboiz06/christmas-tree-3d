@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 import { useRef } from 'react';
 import {
   OrbitControls,
