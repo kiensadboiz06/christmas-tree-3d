@@ -1,3 +1,3 @@
-export { DebugButton, ActionButton, StatusText } from './Buttons';
+export { DebugButton, StatusText } from './Buttons';
 export { uiStyles } from './styles';
 

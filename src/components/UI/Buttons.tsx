@@ -1,4 +1,4 @@
-import type { SceneState } from '../../types';
+import { useState } from 'react';
 
 interface DebugButtonProps {
   debugMode: boolean;
@@ -6,48 +6,27 @@ interface DebugButtonProps {
 }
 
 export const DebugButton = ({ debugMode, onClick }: DebugButtonProps) => {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
     <button
       onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
-        padding: '12px 15px',
-        backgroundColor: debugMode ? '#FFD700' : 'rgba(0,0,0,0.5)',
-        border: '1px solid #FFD700',
+        lineHeight: '1',
+        padding: '10px 18px',
+        backgroundColor: debugMode ? '#FFD700' : isHovered ? 'rgba(255,215,0,0.1)' : 'transparent',
+        border: `2px solid ${debugMode ? '#FFD700' : 'rgba(255,215,0,0.3)'}`,
+        borderRadius: '8px',
         color: debugMode ? '#000' : '#FFD700',
-        fontFamily: 'sans-serif',
-        fontSize: '12px',
-        fontWeight: 'bold',
+        fontSize: '13px',
+        fontWeight: '600',
         cursor: 'pointer',
-        backdropFilter: 'blur(4px)'
+        transition: 'all 0.3s ease',
+        outline: 'none',
       }}>
-      {debugMode ? 'HIDE DEBUG' : '🛠 DEBUG'}
-    </button>
-  );
-};
-
-interface ActionButtonProps {
-  sceneState: SceneState;
-  onClick: () => void;
-}
-
-export const ActionButton = ({ sceneState, onClick }: ActionButtonProps) => {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '12px 30px',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        border: '1px solid rgba(255, 215, 0, 0.5)',
-        color: '#FFD700',
-        fontFamily: 'serif',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        letterSpacing: '3px',
-        textTransform: 'uppercase',
-        cursor: 'pointer',
-        backdropFilter: 'blur(4px)'
-      }}>
-      {sceneState === 'CHAOS' ? 'Assemble Tree' : 'Disperse'}
+      {debugMode ? 'Debug On' : 'Debug'}
     </button>
   );
 };
@@ -63,16 +42,18 @@ export const StatusText = ({ aiStatus }: StatusTextProps) => {
     <div
       style={{
         position: 'absolute',
-        top: '20px',
+        top: '24px',
         left: '50%',
         transform: 'translateX(-50%)',
-        color: hasError ? '#FF0000' : 'rgba(255, 215, 0, 0.4)',
-        fontSize: '10px',
-        letterSpacing: '2px',
+        color: hasError ? '#ff4757' : 'rgba(255,215,0,0.8)',
+        fontSize: '11px',
+        fontWeight: '500',
         zIndex: 10,
-        background: 'rgba(0,0,0,0.5)',
-        padding: '4px 8px',
-        borderRadius: '4px'
+        background: 'rgba(0,0,0,0.4)',
+        backdropFilter: 'blur(10px)',
+        padding: '8px 16px',
+        borderRadius: '20px',
+        border: `1px solid ${hasError ? 'rgba(255,71,87,0.3)' : 'rgba(255,215,0,0.2)'}`,
       }}>
       {aiStatus}
     </div>

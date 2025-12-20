@@ -2,7 +2,7 @@ import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Experience } from './components/3d';
 import { GestureController } from './components/GestureController';
-import { DebugButton, ActionButton, StatusText, uiStyles } from './components/UI';
+import { DebugButton, StatusText, uiStyles } from './components/UI';
 import { useSceneState, useDebugMode, useAIStatus } from './hooks';
 
 export default function GrandTreeApp() {
@@ -12,7 +12,9 @@ export default function GrandTreeApp() {
 
   return (
     <div style={uiStyles.container}>
-      <div style={uiStyles.canvasWrapper}>
+      <div 
+        style={uiStyles.canvasWrapper}
+        onClick={toggleSceneState}>
         <Canvas
           dpr={[1, 2]}
           gl={{ toneMapping: THREE.ReinhardToneMapping }}
@@ -29,7 +31,6 @@ export default function GrandTreeApp() {
 
       <div style={uiStyles.buttonContainer}>
         <DebugButton debugMode={debugMode} onClick={toggleDebugMode} />
-        <ActionButton sceneState={sceneState} onClick={toggleSceneState} />
       </div>
 
       <StatusText aiStatus={aiStatus} />
