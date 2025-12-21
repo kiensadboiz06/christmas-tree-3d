@@ -1,4 +1,5 @@
-import { Suspense } from 'react';
+import { Suspense, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Foliage } from './Foliage';
 import { PhotoOrnaments } from './PhotoOrnaments';
 import { ChristmasElements } from './ChristmasElements';
@@ -7,6 +8,7 @@ import { GiftBoxes } from './GiftBoxes';
 import { TopStar } from './TopStar';
 import { ExperienceLights } from './ExperienceLights';
 import type { SceneState } from '../../types';
+import * as THREE from 'three';
 
 interface ExperienceProps {
   sceneState: SceneState;
@@ -14,11 +16,20 @@ interface ExperienceProps {
 }
 
 export const Experience = ({ sceneState, photoUrls }: ExperienceProps) => {
+  const treeGroupRef = useRef<THREE.Group>(null);
+
+  // Quay cây chậm liên tục
+  useFrame((_, delta) => {
+    if (treeGroupRef.current) {
+      treeGroupRef.current.rotation.y += delta * 0.2; // Quay chậm (0.2 rad/s)
+    }
+  });
+
   return (
     <>
       <ExperienceLights sceneState={sceneState} />
 
-      <group position={[0, -2, 0]}>
+      <group ref={treeGroupRef} position={[0, -2, 0]}>
         <Foliage state={sceneState} />
         <Suspense fallback={null}>
           <ChristmasElements state={sceneState} />

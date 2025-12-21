@@ -85,8 +85,7 @@ export const AddPhotoButton = ({ onPhotosAdded, photoCount }: AddPhotoButtonProp
           alignItems: 'center',
           gap: '8px',
         }}>
-        <span>📷</span>
-        <span>Thêm ảnh</span>
+        <span>Photos</span>
         {photoCount > 0 && (
           <span style={{
             backgroundColor: 'rgba(76, 175, 80, 0.3)',

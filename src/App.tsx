@@ -22,7 +22,7 @@ export default function GrandTreeApp() {
     <div style={uiStyles.container}>
       <div 
         style={uiStyles.canvasWrapper}
-        onClick={toggleSceneState}>
+        onDoubleClick={toggleSceneState}>
         <Canvas
           dpr={[1, 2]}
           gl={{ toneMapping: THREE.ReinhardToneMapping }}
