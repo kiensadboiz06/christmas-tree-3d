@@ -1,13 +1,5 @@
 import type { Config } from '../types';
 
-const TOTAL_NUMBERED_PHOTOS = 31;
-
-// Tạo danh sách ảnh động (top.jpg + 1.jpg đến 31.jpg)
-const bodyPhotoPaths = [
-  '/photos/top.jpg',
-  ...Array.from({ length: TOTAL_NUMBERED_PHOTOS }, (_, i) => `/photos/${i + 1}.jpg`)
-];
-
 export const CONFIG: Config = {
   colors: {
     emerald: '#004225', // Xanh ngọc bích thuần khiết
@@ -26,14 +18,14 @@ export const CONFIG: Config = {
   },
   counts: {
     foliage: 25000, // Tăng số hạt lá
-    ornaments: 50, // Giảm số ảnh
+    ornaments: 50, // Số lượng ảnh trang trí (không còn dùng, giữ lại để tương thích)
     elements: 400, // Số lượng phần tử Giáng sinh
     lights: 400, // Số lượng đèn màu
     gifts: 300 // Hộp quà có nơ
   },
   tree: { height: 26, radius: 11 }, // Tăng kích thước cây thông
   photos: {
-    body: bodyPhotoPaths
+    body: [] // Không còn ảnh mặc định
   }
 };
 

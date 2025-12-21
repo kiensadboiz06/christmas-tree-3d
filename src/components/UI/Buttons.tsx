@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 interface DebugButtonProps {
   debugMode: boolean;
@@ -28,6 +28,77 @@ export const DebugButton = ({ debugMode, onClick }: DebugButtonProps) => {
       }}>
       {debugMode ? 'Debug On' : 'Debug'}
     </button>
+  );
+};
+
+interface AddPhotoButtonProps {
+  onPhotosAdded: (files: FileList) => void;
+  photoCount: number;
+}
+
+export const AddPhotoButton = ({ onPhotosAdded, photoCount }: AddPhotoButtonProps) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      onPhotosAdded(files);
+    }
+    // Reset input để có thể chọn lại cùng file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  return (
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
+      <button
+        onClick={handleClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{
+          lineHeight: '1',
+          padding: '10px 18px',
+          backgroundColor: isHovered ? 'rgba(76, 175, 80, 0.2)' : 'transparent',
+          border: '2px solid rgba(76, 175, 80, 0.5)',
+          borderRadius: '8px',
+          color: '#4CAF50',
+          fontSize: '13px',
+          fontWeight: '600',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          outline: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+        }}>
+        <span>📷</span>
+        <span>Thêm ảnh</span>
+        {photoCount > 0 && (
+          <span style={{
+            backgroundColor: 'rgba(76, 175, 80, 0.3)',
+            padding: '2px 8px',
+            borderRadius: '12px',
+            fontSize: '11px',
+          }}>
+            {photoCount}
+          </span>
+        )}
+      </button>
+    </>
   );
 };
 

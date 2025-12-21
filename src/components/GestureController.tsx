@@ -9,6 +9,8 @@ export const GestureController = ({ onGesture, onStatus, debugMode }: GestureCon
   useEffect(() => {
     let gestureRecognizer: GestureRecognizer;
     let requestRef: number;
+    let stream: MediaStream | null = null;
+    let videoElement: HTMLVideoElement | null = null;
 
     const setup = async () => {
       onStatus('DOWNLOADING AI...');
@@ -27,12 +29,30 @@ export const GestureController = ({ onGesture, onStatus, debugMode }: GestureCon
         });
         onStatus('REQUESTING CAMERA...');
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-            videoRef.current.play();
-            onStatus('AI READY: SHOW HAND');
-            predictWebcam();
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          videoElement = videoRef.current;
+          if (videoElement) {
+            // Stop any existing stream first
+            if (videoElement.srcObject) {
+              const oldStream = videoElement.srcObject as MediaStream;
+              oldStream.getTracks().forEach(track => track.stop());
+            }
+            
+            videoElement.srcObject = stream;
+            // Wait for video to be ready before playing
+            const handleLoadedMetadata = () => {
+              if (videoElement) {
+                videoElement.play().catch((err) => {
+                  // Ignore AbortError - it's expected when video is interrupted
+                  if (err.name !== 'AbortError') {
+                    console.error('Error playing video:', err);
+                  }
+                });
+                onStatus('AI READY: SHOW HAND');
+                predictWebcam();
+              }
+            };
+            videoElement.onloadedmetadata = handleLoadedMetadata;
           }
         } else {
           onStatus('ERROR: CAMERA PERMISSION DENIED');
@@ -77,7 +97,19 @@ export const GestureController = ({ onGesture, onStatus, debugMode }: GestureCon
       }
     };
     setup();
-    return () => cancelAnimationFrame(requestRef);
+    return () => {
+      cancelAnimationFrame(requestRef);
+      // Clean up stream
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      if (videoElement) {
+        videoElement.srcObject = null;
+      }
+      if (gestureRecognizer) {
+        gestureRecognizer.close();
+      }
+    };
   }, [onGesture, onStatus, debugMode]);
 
   return (

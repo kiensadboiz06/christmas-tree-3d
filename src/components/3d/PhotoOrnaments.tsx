@@ -10,11 +10,13 @@ import type { SceneState, PhotoOrnamentData } from '../../types';
 
 interface PhotoOrnamentsProps {
   state: SceneState;
+  photoUrls: string[];
 }
 
-export const PhotoOrnaments = ({ state }: PhotoOrnamentsProps) => {
-  const textures = useTexture(CONFIG.photos.body);
-  const count = CONFIG.counts.ornaments;
+// Component con để load texture - đảm bảo hooks được gọi ổn định
+const PhotoOrnamentsContent = ({ state, photoUrls }: PhotoOrnamentsProps) => {
+  const textures = useTexture(photoUrls);
+  const count = photoUrls.length;
   const groupRef = useRef<THREE.Group>(null);
 
   const borderGeometry = useMemo(() => new THREE.PlaneGeometry(1.2, 1.5), []);
@@ -29,6 +31,7 @@ export const PhotoOrnaments = ({ state }: PhotoOrnamentsProps) => {
       const targetPos = getWeightedTreePosition(0.25);
       targetPos.x += 0.5 * Math.cos(Math.random() * Math.PI * 2);
       targetPos.z += 0.5 * Math.sin(Math.random() * Math.PI * 2);
+      targetPos.z += 0.3;
 
       const isBig = Math.random() < 0.2;
       const baseScale = isBig ? 2.2 : 0.8 + Math.random() * 0.6;
@@ -98,54 +101,64 @@ export const PhotoOrnaments = ({ state }: PhotoOrnamentsProps) => {
   });
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} renderOrder={100}>
       {data.map((obj, i) => (
         <group
           key={i}
           scale={[obj.scale, obj.scale, obj.scale]}
           rotation={state === 'CHAOS' ? obj.chaosRotation : [0, 0, 0]}>
           {/* Mặt trước */}
-          <group position={[0, 0, 0.015]}>
-            <mesh geometry={photoGeometry}>
+          <group position={[0, 0, 0.5]}>
+            <mesh geometry={photoGeometry} renderOrder={101}>
               <meshStandardMaterial
                 map={textures[obj.textureIndex]}
                 roughness={0.5}
                 metalness={0}
                 side={THREE.FrontSide}
+                depthTest={true}
+                depthWrite={true}
               />
             </mesh>
             <mesh
               geometry={borderGeometry}
-              position={[0, -0.15, -0.01]}>
+              position={[0, -0.15, -0.01]}
+              renderOrder={101}>
               <meshStandardMaterial
                 color={obj.borderColor}
                 roughness={0.9}
                 metalness={0}
                 side={THREE.FrontSide}
+                depthTest={true}
+                depthWrite={true}
               />
             </mesh>
           </group>
 
           {/* Mặt sau trống (không ảnh) */}
           <group
-            position={[0, 0, -0.015]}
+            position={[0, 0, -0.5]}
             rotation={[0, Math.PI, 0]}>
-            <mesh geometry={photoGeometry}>
+            <mesh geometry={photoGeometry} renderOrder={101}>
               <meshStandardMaterial
                 color={obj.borderColor}
                 roughness={0.9}
                 metalness={0}
                 side={THREE.FrontSide}
+                depthTest={true}
+                depthWrite={true}
               />
             </mesh>
             <mesh
               geometry={borderGeometry}
-              position={[0, -0.15, -0.01]}>
+              position={[0, -0.15, -0.01]}
+              renderOrder={101}>
               <meshStandardMaterial
                 color={obj.borderColor}
                 roughness={0.9}
                 metalness={0}
                 side={THREE.FrontSide}
+                depthTest={true}
+                depthWrite={true}
               />
             </mesh>
           </group>
@@ -153,5 +166,19 @@ export const PhotoOrnaments = ({ state }: PhotoOrnamentsProps) => {
       ))}
     </group>
   );
+};
+
+// Component chính - xử lý conditional rendering
+export const PhotoOrnaments = ({ state, photoUrls }: PhotoOrnamentsProps) => {
+  // Đảm bảo photoUrls luôn là mảng hợp lệ
+  const validPhotoUrls = Array.isArray(photoUrls) && photoUrls.length > 0 ? photoUrls : [];
+  
+  // Nếu không có ảnh, không render gì
+  if (validPhotoUrls.length === 0) {
+    return null;
+  }
+  
+  // Render component con với texture loading
+  return <PhotoOrnamentsContent state={state} photoUrls={validPhotoUrls} />;
 };
 
