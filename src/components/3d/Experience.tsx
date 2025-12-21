@@ -7,15 +7,16 @@ import { FairyLights } from './FairyLights';
 import { GiftBoxes } from './GiftBoxes';
 import { TopStar } from './TopStar';
 import { ExperienceLights } from './ExperienceLights';
-import type { SceneState } from '../../types';
+import type { SceneState, ZoomState } from '../../types';
 import * as THREE from 'three';
 
 interface ExperienceProps {
   sceneState: SceneState;
   photoUrls: string[];
+  zoomState?: ZoomState;
 }
 
-export const Experience = ({ sceneState, photoUrls }: ExperienceProps) => {
+export const Experience = ({ sceneState, photoUrls, zoomState }: ExperienceProps) => {
   const treeGroupRef = useRef<THREE.Group>(null);
 
   // Quay cây chậm liên tục
@@ -40,7 +41,8 @@ export const Experience = ({ sceneState, photoUrls }: ExperienceProps) => {
           <PhotoOrnaments 
             key={photoUrls?.length || 0} 
             state={sceneState} 
-            photoUrls={photoUrls || []} 
+            photoUrls={photoUrls || []}
+            zoomState={zoomState}
           />
         </Suspense>
       </group>

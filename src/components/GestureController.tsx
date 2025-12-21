@@ -2,9 +2,10 @@ import { useRef, useEffect } from 'react';
 import { GestureRecognizer, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
 import type { GestureControllerProps } from '../types';
 
-export const GestureController = ({ onGesture, onStatus, debugMode }: GestureControllerProps) => {
+export const GestureController = ({ onGesture, onStatus, debugMode, onPinch }: GestureControllerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const lastPinchStateRef = useRef<boolean>(false);
 
   useEffect(() => {
     let gestureRecognizer: GestureRecognizer;
@@ -81,16 +82,60 @@ export const GestureController = ({ onGesture, onStatus, debugMode }: GestureCon
               }
           } else if (ctx && !debugMode) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
+          // Detect pinch gesture (thumb tip touching index finger tip)
+          let isPinching = false;
+          let handPosition: { x: number; y: number } | undefined;
+          if (results.landmarks && results.landmarks.length > 0 && onPinch) {
+            const landmarks = results.landmarks[0];
+            // Thumb tip: index 4, Index finger tip: index 8
+            const thumbTip = landmarks[4];
+            const indexTip = landmarks[8];
+            
+            if (thumbTip && indexTip) {
+              // Calculate distance between thumb and index finger
+              const dx = thumbTip.x - indexTip.x;
+              const dy = thumbTip.y - indexTip.y;
+              const dz = (thumbTip.z || 0) - (indexTip.z || 0);
+              const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+              
+              // Threshold for pinch detection (tune this value)
+              isPinching = distance < 0.05;
+              
+              // Get hand position (use middle of thumb and index finger)
+              if (isPinching) {
+                handPosition = {
+                  x: (thumbTip.x + indexTip.x) / 2,
+                  y: (thumbTip.y + indexTip.y) / 2
+                };
+              }
+              
+              // Only trigger callback on state change to avoid excessive calls
+              if (isPinching !== lastPinchStateRef.current) {
+                lastPinchStateRef.current = isPinching;
+                onPinch(isPinching, handPosition);
+              } else if (isPinching && handPosition) {
+                // Update hand position even if state hasn't changed
+                onPinch(isPinching, handPosition);
+              }
+            }
+          }
+
           if (results.gestures.length > 0) {
             const name = results.gestures[0][0].categoryName;
             const score = results.gestures[0][0].score;
             if (score > 0.4) {
               if (name === 'Open_Palm') onGesture('CHAOS');
               if (name === 'Closed_Fist') onGesture('FORMED');
-              if (debugMode) onStatus(`DETECTED: ${name}`);
+              if (debugMode) {
+                const pinchStatus = isPinching ? ' [PINCH]' : '';
+                onStatus(`DETECTED: ${name}${pinchStatus}`);
+              }
             }
           } else {
-            if (debugMode) onStatus('AI READY: NO HAND');
+            if (debugMode) {
+              const pinchStatus = isPinching ? ' [PINCH]' : '';
+              onStatus(`AI READY: NO HAND${pinchStatus}`);
+            }
           }
         }
         requestRef = requestAnimationFrame(predictWebcam);
@@ -110,7 +155,7 @@ export const GestureController = ({ onGesture, onStatus, debugMode }: GestureCon
         gestureRecognizer.close();
       }
     };
-  }, [onGesture, onStatus, debugMode]);
+  }, [onGesture, onStatus, debugMode, onPinch]);
 
   return (
     <>

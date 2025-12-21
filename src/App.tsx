@@ -3,13 +3,14 @@ import * as THREE from 'three';
 import { Experience } from './components/3d';
 import { GestureController } from './components/GestureController';
 import { DebugButton, StatusText, AddPhotoButton, uiStyles } from './components/UI';
-import { useSceneState, useDebugMode, useAIStatus, usePhotos } from './hooks';
+import { useSceneState, useDebugMode, useAIStatus, usePhotos, useZoomState } from './hooks';
 
 export default function GrandTreeApp() {
   const { sceneState, setSceneState, toggleSceneState } = useSceneState();
   const { debugMode, toggleDebugMode } = useDebugMode();
   const { aiStatus, setAiStatus } = useAIStatus();
   const { photos, addPhotos } = usePhotos();
+  const { zoomState, handlePinch } = useZoomState();
 
   const handlePhotosAdded = (files: FileList) => {
     addPhotos(files).catch((error) => {
@@ -27,7 +28,7 @@ export default function GrandTreeApp() {
           dpr={[1, 2]}
           gl={{ toneMapping: THREE.ReinhardToneMapping }}
           shadows>
-          <Experience sceneState={sceneState} photoUrls={photos} />
+          <Experience sceneState={sceneState} photoUrls={photos} zoomState={zoomState} />
         </Canvas>
       </div>
 
@@ -35,6 +36,7 @@ export default function GrandTreeApp() {
         onGesture={setSceneState}
         onStatus={setAiStatus}
         debugMode={debugMode}
+        onPinch={handlePinch}
       />
 
       <div style={uiStyles.buttonContainer}>

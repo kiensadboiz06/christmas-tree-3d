@@ -54,6 +54,14 @@ export interface PhotoOrnamentData extends ObjectData {
   borderColor: string;
   wobbleOffset: number;
   wobbleSpeed: number;
+  baseScale: number;
+  zoomScale: number;
+}
+
+export interface ZoomState {
+  active: boolean;
+  targetIndex: number;
+  handPosition?: { x: number; y: number }; // Screen space coordinates (0-1)
 }
 
 export interface ChristmasElementData extends ObjectData {
@@ -86,5 +94,6 @@ export interface GestureControllerProps {
   onGesture: (gesture: SceneState) => void;
   onStatus: (status: string) => void;
   debugMode: boolean;
+  onPinch?: (isPinching: boolean, handPosition?: { x: number; y: number }) => void;
 }
 
