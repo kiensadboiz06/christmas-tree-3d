@@ -4,15 +4,21 @@ import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CONFIG } from '../../constants/config';
-import { getSphericalPosition, getWeightedTreePosition } from '../../utils/treePositions';
-import type { SceneState, FairyLightData, ThemeColors } from '../../types';
+import { 
+  getSphericalPosition, 
+  getWeightedTreePosition, 
+  getSpiralLightPosition,
+  getTieredLightPosition 
+} from '../../utils/treePositions';
+import type { SceneState, FairyLightData, ThemeColors, TreeStyle } from '../../types';
 
 interface FairyLightsProps {
   state: SceneState;
   themeColors: ThemeColors;
+  treeStyle: TreeStyle;
 }
 
-export const FairyLights = ({ state, themeColors }: FairyLightsProps) => {
+export const FairyLights = ({ state, themeColors, treeStyle }: FairyLightsProps) => {
   const count = CONFIG.counts.lights;
   const groupRef = useRef<THREE.Group>(null);
   const geometry = useMemo(() => new THREE.SphereGeometry(0.8, 8, 8), []);
@@ -22,30 +28,73 @@ export const FairyLights = ({ state, themeColors }: FairyLightsProps) => {
     return new Array(count).fill(0).map(() => Math.floor(Math.random() * 4));
   }, [count]);
 
+  // Generate chaos positions (only once)
+  const chaosPositions = useMemo(() => {
+    return new Array(count).fill(0).map(() => getSphericalPosition(40));
+  }, [count]);
+
+  // Generate target positions based on tree style
+  const targetPositions = useMemo(() => {
+    return new Array(count).fill(0).map((_, i) => {
+      let targetPos: THREE.Vector3;
+      
+      switch (treeStyle) {
+        case 'spiral':
+          // Đèn LED dạng dây quấn xoắn ốc
+          targetPos = getSpiralLightPosition(i, count);
+          break;
+        case 'tiered':
+          // Đèn phân bố theo các tầng
+          targetPos = getTieredLightPosition(i, count);
+          break;
+        case 'classic':
+        default:
+          // Phân bố ngẫu nhiên trên cây
+          targetPos = getWeightedTreePosition();
+          targetPos.x += 0.3 * Math.cos(Math.random() * Math.PI * 2);
+          targetPos.z += 0.3 * Math.sin(Math.random() * Math.PI * 2);
+          break;
+      }
+      
+      return targetPos;
+    });
+  }, [count, treeStyle]);
+
+  // Store random speeds and time offsets (only generated once)
+  const lightSpeeds = useMemo(() => {
+    return new Array(count).fill(0).map(() => 2 + Math.random() * 3);
+  }, [count]);
+  
+  const timeOffsets = useMemo(() => {
+    return new Array(count).fill(0).map(() => Math.random() * 100);
+  }, [count]);
+
   const data = useMemo<FairyLightData[]>(() => {
     return new Array(count).fill(0).map((_, i) => {
-      // Tỏa ra theo hình cầu với bán kính 40
-      const chaosPos = getSphericalPosition(40);
+      const chaosPos = chaosPositions[i];
+      const targetPos = targetPositions[i];
       
-      const targetPos = getWeightedTreePosition();
-      targetPos.x += 0.3 * Math.cos(Math.random() * Math.PI * 2);
-      targetPos.z += 0.3 * Math.sin(Math.random() * Math.PI * 2);
-      
-      const color = CONFIG.colors.lights[
-        Math.floor(Math.random() * CONFIG.colors.lights.length)
-      ];
-      const speed = 2 + Math.random() * 3;
+      // Use theme colors directly
+      const colorIndex = colorIndices[i] % themeColors.lights.length;
+      const color = themeColors.lights[colorIndex];
       
       return {
         chaosPos,
         targetPos,
         color,
-        speed,
+        speed: lightSpeeds[i],
         currentPos: chaosPos.clone(),
-        timeOffset: Math.random() * 100
+        timeOffset: timeOffsets[i]
       };
     });
-  }, [count]);
+  }, [count, chaosPositions, targetPositions, colorIndices, themeColors.lights, lightSpeeds, timeOffsets]);
+  
+  // Update target positions when tree style changes
+  useEffect(() => {
+    data.forEach((objData, i) => {
+      objData.targetPos.copy(targetPositions[i]);
+    });
+  }, [targetPositions, data]);
   
   // Update light colors when theme changes
   useEffect(() => {
@@ -58,9 +107,11 @@ export const FairyLights = ({ state, themeColors }: FairyLightsProps) => {
         const newColor = themeColors.lights[colorIndex];
         (mesh.material as THREE.MeshStandardMaterial).color.set(newColor);
         (mesh.material as THREE.MeshStandardMaterial).emissive.set(newColor);
+        // Also update data color for reference
+        data[i].color = newColor;
       }
     });
-  }, [themeColors.lights, colorIndices]);
+  }, [themeColors.lights, colorIndices, data]);
 
   useFrame((stateObj, delta) => {
     if (!groupRef.current) return;
@@ -85,19 +136,23 @@ export const FairyLights = ({ state, themeColors }: FairyLightsProps) => {
 
   return (
     <group ref={groupRef}>
-      {data.map((obj, i) => (
-        <mesh
-          key={i}
-          scale={[0.15, 0.15, 0.15]}
-          geometry={geometry}>
-          <meshStandardMaterial
-            color={obj.color}
-            emissive={obj.color}
-            emissiveIntensity={0}
-            toneMapped={false}
-          />
-        </mesh>
-      ))}
+      {data.map((obj, i) => {
+        const colorIndex = colorIndices[i] % themeColors.lights.length;
+        const currentColor = themeColors.lights[colorIndex];
+        return (
+          <mesh
+            key={i}
+            scale={[0.15, 0.15, 0.15]}
+            geometry={geometry}>
+            <meshStandardMaterial
+              color={currentColor}
+              emissive={currentColor}
+              emissiveIntensity={0}
+              toneMapped={false}
+            />
+          </mesh>
+        );
+      })}
     </group>
   );
 };

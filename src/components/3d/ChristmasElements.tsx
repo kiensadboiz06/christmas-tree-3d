@@ -4,14 +4,15 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CONFIG } from '../../constants/config';
 import { getWeightedTreePosition } from '../../utils/treePositions';
-import type { SceneState, ChristmasElementData, ThemeColors } from '../../types';
+import type { SceneState, ChristmasElementData, ThemeColors, TreeStyle } from '../../types';
 
 interface ChristmasElementsProps {
   state: SceneState;
   themeColors: ThemeColors;
+  treeStyle: TreeStyle;
 }
 
-export const ChristmasElements = ({ state, themeColors }: ChristmasElementsProps) => {
+export const ChristmasElements = ({ state, themeColors, treeStyle }: ChristmasElementsProps) => {
   const count = CONFIG.counts.elements;
   const groupRef = useRef<THREE.Group>(null);
 
@@ -22,16 +23,28 @@ export const ChristmasElements = ({ state, themeColors }: ChristmasElementsProps
     return new Array(count).fill(0).map(() => Math.floor(Math.random() * 3));
   }, [count]);
 
+  // Store chaos positions (only generated once)
+  const chaosPositions = useMemo(() => {
+    return new Array(count).fill(0).map(() => new THREE.Vector3(
+      (Math.random() - 0.5) * 60,
+      (Math.random() - 0.5) * 60,
+      (Math.random() - 0.5) * 60
+    ));
+  }, [count]);
+
+  // Generate target positions based on tree style
+  const targetPositions = useMemo(() => {
+    return new Array(count).fill(0).map(() => {
+      const targetPos = getWeightedTreePosition(0, treeStyle);
+      targetPos.multiplyScalar(0.95);
+      return targetPos;
+    });
+  }, [count, treeStyle]);
+
   const data = useMemo<ChristmasElementData[]>(() => {
     return new Array(count).fill(0).map((_, i) => {
-      const chaosPos = new THREE.Vector3(
-        (Math.random() - 0.5) * 60,
-        (Math.random() - 0.5) * 60,
-        (Math.random() - 0.5) * 60
-      );
-      
-      const targetPos = getWeightedTreePosition();
-      targetPos.multiplyScalar(0.95);
+      const chaosPos = chaosPositions[i];
+      const targetPos = targetPositions[i];
 
       // Tất cả đều là quả cầu, chỉ khác màu và tỷ lệ
       const colorType = Math.floor(Math.random() * 3);
@@ -87,7 +100,14 @@ export const ChristmasElements = ({ state, themeColors }: ChristmasElementsProps
         sparkleStartTime
       };
     });
-  }, [count]);
+  }, [count, chaosPositions, targetPositions]);
+
+  // Update target positions when tree style changes
+  useEffect(() => {
+    data.forEach((objData, i) => {
+      objData.targetPos.copy(targetPositions[i]);
+    });
+  }, [targetPositions, data]);
 
   // Update element colors when theme changes
   useEffect(() => {

@@ -96,7 +96,11 @@ export interface GestureControllerProps {
   debugMode: boolean;
   onPinch?: (isPinching: boolean, handPosition?: { x: number; y: number }) => void;
   onThumbUp?: () => void;
+  onFingerCount?: (count: 1 | 2 | 3) => void;
 }
+
+// Tree style types
+export type TreeStyle = 'classic' | 'tiered' | 'spiral';
 
 // Theme types
 export type ThemeType = 'christmas' | 'pink' | 'purple' | 'blue';

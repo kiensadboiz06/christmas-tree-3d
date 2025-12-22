@@ -6,42 +6,65 @@ import * as THREE from 'three';
 import { MathUtils } from 'three';
 import * as random from 'maath/random';
 import { FoliageMaterial } from '../../shaders/FoliageMaterial';
-import { getTreePosition } from '../../utils/treePositions';
+import { getTreePositionByStyle } from '../../utils/treePositions';
 import { CONFIG } from '../../constants/config';
-import type { SceneState, ThemeColors } from '../../types';
+import type { SceneState, ThemeColors, TreeStyle } from '../../types';
 
 extend({ FoliageMaterial });
 
 interface FoliageProps {
   state: SceneState;
   themeColors: ThemeColors;
+  treeStyle: TreeStyle;
 }
 
-export const Foliage = ({ state, themeColors }: FoliageProps) => {
+export const Foliage = ({ state, themeColors, treeStyle }: FoliageProps) => {
   const materialRef = useRef<any>(null);
+  const geometryRef = useRef<THREE.BufferGeometry>(null);
+  const count = CONFIG.counts.foliage;
   
-  const { positions, targetPositions, randoms } = useMemo(() => {
-    const count = CONFIG.counts.foliage;
+  // Store initial chaos positions (only generated once)
+  const chaosPositions = useMemo(() => {
     const positions = new Float32Array(count * 3);
-    const targetPositions = new Float32Array(count * 3);
-    const randoms = new Float32Array(count);
     const spherePoints = random.inSphere(new Float32Array(count * 3), { radius: 30 }) as Float32Array;
-    
     for (let i = 0; i < count; i++) {
       positions[i * 3] = spherePoints[i * 3];
       positions[i * 3 + 1] = spherePoints[i * 3 + 1];
       positions[i * 3 + 2] = spherePoints[i * 3 + 2];
-      
-      const [tx, ty, tz] = getTreePosition();
-      targetPositions[i * 3] = tx;
-      targetPositions[i * 3 + 1] = ty;
-      targetPositions[i * 3 + 2] = tz;
-      
-      randoms[i] = Math.random();
     }
-    
-    return { positions, targetPositions, randoms };
-  }, []);
+    return positions;
+  }, [count]);
+  
+  const randoms = useMemo(() => {
+    const arr = new Float32Array(count);
+    for (let i = 0; i < count; i++) {
+      arr[i] = Math.random();
+    }
+    return arr;
+  }, [count]);
+  
+  // Generate target positions based on tree style (regenerate when style changes)
+  const targetPositions = useMemo(() => {
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const [tx, ty, tz] = getTreePositionByStyle(treeStyle);
+      positions[i * 3] = tx;
+      positions[i * 3 + 1] = ty;
+      positions[i * 3 + 2] = tz;
+    }
+    return positions;
+  }, [count, treeStyle]);
+  
+  // Update geometry when tree style changes
+  useEffect(() => {
+    if (geometryRef.current) {
+      const targetAttr = geometryRef.current.getAttribute('aTargetPos');
+      if (targetAttr) {
+        targetAttr.array.set(targetPositions);
+        targetAttr.needsUpdate = true;
+      }
+    }
+  }, [targetPositions]);
   
   // Update theme color
   useEffect(() => {
@@ -69,10 +92,10 @@ export const Foliage = ({ state, themeColors }: FoliageProps) => {
   
   return (
     <points>
-      <bufferGeometry>
+      <bufferGeometry ref={geometryRef}>
         <bufferAttribute
           attach='attributes-position'
-          args={[positions, 3]}
+          args={[chaosPositions, 3]}
         />
         <bufferAttribute
           attach='attributes-aTargetPos'
