@@ -8,14 +8,18 @@ import {
 } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { CONFIG } from '../../constants/config';
-import type { SceneState } from '../../types';
+import type { SceneState, ZoomState } from '../../types';
 
 interface ExperienceLightsProps {
   sceneState: SceneState;
+  zoomState?: ZoomState;
 }
 
-export const ExperienceLights = ({ sceneState }: ExperienceLightsProps) => {
+export const ExperienceLights = ({ sceneState, zoomState }: ExperienceLightsProps) => {
   const controlsRef = useRef<any>(null);
+
+  // Tắt autoRotate khi đang zoom
+  const shouldAutoRotate = sceneState === 'FORMED' && !zoomState?.active;
 
   return (
     <>
@@ -31,7 +35,7 @@ export const ExperienceLights = ({ sceneState }: ExperienceLightsProps) => {
         minDistance={15}
         maxDistance={80}
         rotateSpeed={1.2}
-        autoRotate={sceneState === 'FORMED'}
+        autoRotate={shouldAutoRotate}
         autoRotateSpeed={0.3}
       />
 

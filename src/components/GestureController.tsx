@@ -6,6 +6,10 @@ export const GestureController = ({ onGesture, onStatus, debugMode, onPinch }: G
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastPinchStateRef = useRef<boolean>(false);
+  const lastHandPositionRef = useRef<{ x: number; y: number } | undefined>(undefined);
+  
+  // Threshold for hand position change to trigger update (avoid excessive updates)
+  const HAND_POSITION_THRESHOLD = 0.02; // 2% of screen
 
   useEffect(() => {
     let gestureRecognizer: GestureRecognizer;
@@ -85,7 +89,11 @@ export const GestureController = ({ onGesture, onStatus, debugMode, onPinch }: G
           // Detect pinch gesture (thumb tip touching index finger tip)
           let isPinching = false;
           let handPosition: { x: number; y: number } | undefined;
-          if (results.landmarks && results.landmarks.length > 0 && onPinch) {
+          
+          // Check if hand is detected
+          const hasHand = results.landmarks && results.landmarks.length > 0;
+          
+          if (hasHand && onPinch) {
             const landmarks = results.landmarks[0];
             // Thumb tip: index 4, Index finger tip: index 8
             const thumbTip = landmarks[4];
@@ -109,14 +117,29 @@ export const GestureController = ({ onGesture, onStatus, debugMode, onPinch }: G
                 };
               }
               
-              // Only trigger callback on state change to avoid excessive calls
+              // Check if hand position changed significantly
+              const handPositionChanged = !lastHandPositionRef.current || 
+                !handPosition ||
+                Math.abs(handPosition.x - lastHandPositionRef.current.x) > HAND_POSITION_THRESHOLD ||
+                Math.abs(handPosition.y - lastHandPositionRef.current.y) > HAND_POSITION_THRESHOLD;
+              
+              // Only trigger callback on state change or significant position change
               if (isPinching !== lastPinchStateRef.current) {
                 lastPinchStateRef.current = isPinching;
+                lastHandPositionRef.current = handPosition;
                 onPinch(isPinching, handPosition);
-              } else if (isPinching && handPosition) {
-                // Update hand position even if state hasn't changed
+              } else if (isPinching && handPosition && handPositionChanged) {
+                // Update hand position only if it changed significantly
+                lastHandPositionRef.current = handPosition;
                 onPinch(isPinching, handPosition);
               }
+            }
+          } else if (!hasHand && onPinch) {
+            // No hand detected - reset pinch state if it was active
+            if (lastPinchStateRef.current) {
+              lastPinchStateRef.current = false;
+              lastHandPositionRef.current = undefined;
+              onPinch(false, undefined);
             }
           }
 

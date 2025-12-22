@@ -19,16 +19,16 @@ interface ExperienceProps {
 export const Experience = ({ sceneState, photoUrls, zoomState }: ExperienceProps) => {
   const treeGroupRef = useRef<THREE.Group>(null);
 
-  // Quay cây chậm liên tục
+  // Quay cây chậm liên tục - dừng khi đang zoom
   useFrame((_, delta) => {
-    if (treeGroupRef.current) {
+    if (treeGroupRef.current && !zoomState?.active) {
       treeGroupRef.current.rotation.y += delta * 0.2; // Quay chậm (0.2 rad/s)
     }
   });
 
   return (
     <>
-      <ExperienceLights sceneState={sceneState} />
+      <ExperienceLights sceneState={sceneState} zoomState={zoomState} />
 
       <group ref={treeGroupRef} position={[0, -2, 0]}>
         <Foliage state={sceneState} />

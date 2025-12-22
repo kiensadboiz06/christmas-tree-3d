@@ -23,6 +23,17 @@ const PhotoOrnamentsContent = ({ state, photoUrls, zoomState }: PhotoOrnamentsPr
   const lockedZoomIndexRef = useRef<number>(-1); // Lưu index của ảnh đang được zoom
   const { camera } = useThree();
   
+  // Cache reusable objects to avoid creating new ones every frame
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const handScreenPosRef = useRef<THREE.Vector2>(new THREE.Vector2());
+  const screenPosRef = useRef<THREE.Vector3>(new THREE.Vector3());
+  const cameraDirectionRef = useRef<THREE.Vector3>(new THREE.Vector3());
+  const centerScreenPosRef = useRef<THREE.Vector2>(new THREE.Vector2(0, 0));
+  const centerRaycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const finalTargetRef = useRef<THREE.Vector3>(new THREE.Vector3());
+  const tempQuatRef = useRef<THREE.Quaternion>(new THREE.Quaternion());
+  const parentWorldQuatRef = useRef<THREE.Quaternion>(new THREE.Quaternion());
+  
   // Track khi zoom bắt đầu hoặc kết thúc
   useEffect(() => {
     if (!zoomState?.active) {
@@ -47,7 +58,7 @@ const PhotoOrnamentsContent = ({ state, photoUrls, zoomState }: PhotoOrnamentsPr
       targetPos.z += 0.3;
 
       const isBig = Math.random() < 0.2;
-      const baseScale = isBig ? 2.2 : 0.8 + Math.random() * 0.6;
+      const baseScale = isBig ? 1.8 : 0.8 + Math.random() * 0.4;
       const weight = 0.8 + Math.random() * 1.2;
       const borderColor = CONFIG.colors.borders[
         Math.floor(Math.random() * CONFIG.colors.borders.length)
@@ -90,34 +101,33 @@ const PhotoOrnamentsContent = ({ state, photoUrls, zoomState }: PhotoOrnamentsPr
 
     // Find nearest photo to hand position when zoom is active (works in both CHAOS and FORMED)
     let currentNearestIndex = -1;
-    let minDistance = Infinity;
     
     // Nếu đang zoom và đã lock một ảnh, giữ nguyên ảnh đó
     if (zoomState?.active && lockedZoomIndexRef.current >= 0) {
       currentNearestIndex = lockedZoomIndexRef.current;
     } else if (zoomState?.active && zoomState?.handPosition) {
       // Chỉ tìm ảnh mới khi chưa lock (lần đầu bắt đầu zoom)
-      // Convert hand position from screen space (0-1) to world space
-      const handScreenPos = new THREE.Vector2(
+      // Convert hand position from screen space (0-1) to world space (reuse cached vector)
+      handScreenPosRef.current.set(
         zoomState.handPosition.x * 2 - 1, // Convert 0-1 to -1 to 1
         -(zoomState.handPosition.y * 2 - 1) // Flip Y and convert
       );
       
-      // Create a raycaster to project hand position into 3D space
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(handScreenPos, camera);
+      // Reuse cached raycaster
+      raycasterRef.current.setFromCamera(handScreenPosRef.current, camera);
       
       // Find photo closest to the ray from hand position
+      let minDistance = Infinity;
       groupRef.current.children.forEach((group, i) => {
         // Calculate distance from hand ray to photo position
         const photoPos = group.position;
-        const distanceToRay = raycaster.ray.distanceToPoint(photoPos);
+        const distanceToRay = raycasterRef.current.ray.distanceToPoint(photoPos);
         
-        // Also consider screen-space distance for better selection
-        const screenPos = photoPos.clone().project(camera);
+        // Also consider screen-space distance for better selection (reuse cached vector)
+        screenPosRef.current.copy(photoPos).project(camera);
         const screenDistance = Math.sqrt(
-          Math.pow(screenPos.x - handScreenPos.x, 2) + 
-          Math.pow(screenPos.y - handScreenPos.y, 2)
+          Math.pow(screenPosRef.current.x - handScreenPosRef.current.x, 2) + 
+          Math.pow(screenPosRef.current.y - handScreenPosRef.current.y, 2)
         );
         
         // Combined distance metric (weighted towards screen space for better UX)
@@ -152,40 +162,63 @@ const PhotoOrnamentsContent = ({ state, photoUrls, zoomState }: PhotoOrnamentsPr
       // Khi zoom, di chuyển ảnh về phía camera (hoạt động ở cả CHAOS và FORMED)
       let finalTarget;
       if (isZoomed) {
-        // Tính toán vị trí gần camera hơn
-        // Lấy hướng camera (forward direction)
-        const cameraDirection = new THREE.Vector3();
-        camera.getWorldDirection(cameraDirection);
-        // Đặt ảnh ở khoảng cách 30 đơn vị trước camera (gần hơn để dễ nhìn thấy)
-        const distanceFromCamera = 30;
-        finalTarget = new THREE.Vector3()
+        // Tính toán vị trí gần camera hơn (reuse cached vector)
+        camera.getWorldDirection(cameraDirectionRef.current);
+        // Đặt ảnh ở khoảng cách xa hơn một chút để đảm bảo bao quát toàn bộ ảnh
+        const distanceFromCamera = 25;
+        finalTargetRef.current
           .copy(camera.position)
-          .addScaledVector(cameraDirection, distanceFromCamera);
+          .addScaledVector(cameraDirectionRef.current, distanceFromCamera);
+        
+        // Chuyển đổi world position sang local position của groupRef (vì các ornament là con của groupRef)
+        // Điều này đảm bảo ảnh luôn ở giữa màn hình bất kể cây đang quay hay bị lệch position
+        if (groupRef.current) {
+          groupRef.current.worldToLocal(finalTargetRef.current);
+        }
+        
+        finalTarget = finalTargetRef.current;
       } else {
         finalTarget = isFormed ? objData.targetPos : objData.chaosPos;
       }
 
-      // Tăng tốc độ di chuyển khi zoom để ảnh di chuyển nhanh hơn
-      const lerpSpeed = isZoomed ? 5.0 : (isFormed ? 0.8 * objData.weight : 0.5);
+      // Tăng tốc độ di chuyển khi zoom để ảnh di chuyển nhanh hơn, bám sát camera
+      const lerpSpeed = isZoomed ? 10.0 : (isFormed ? 0.8 * objData.weight : 0.5);
       objData.currentPos.lerp(finalTarget, delta * lerpSpeed);
       group.position.copy(objData.currentPos);
 
       // Smooth zoom animation - only zoom the nearest photo
-      const targetZoom = isZoomed ? 9.5 : 1.0;
+      const targetZoom = isZoomed ? 6.0 : 1.0;
       objData.zoomScale += (targetZoom - objData.zoomScale) * delta * 8; // Fast smooth lerp
       objData.scale = objData.baseScale * objData.zoomScale;
+
+      // Adjust scale to fit screen if baseScale is too large when zoomed
+      if (isZoomed) {
+        // Limit maximum scaled size to ensure it fits screen
+        const maxZoomedSize = 8.0;
+        if (objData.scale > maxZoomedSize) {
+          objData.scale = maxZoomedSize;
+        }
+      }
+      
       group.scale.setScalar(objData.scale);
 
       // Khi zoom, ảnh hướng thẳng vào camera và dừng rotation (hoạt động ở cả CHAOS và FORMED)
       if (isZoomed) {
-        group.lookAt(camera.position);
+        // Đảm bảo ảnh luôn song song với màn hình (không bị xéo do rotation của cây)
+        // Lấy quaternion của camera trong không gian thế giới
+        camera.getWorldQuaternion(tempQuatRef.current);
+        
+        // Chuyển đổi quaternion thế giới sang không gian local của ornament
+        // Ornament là con của groupRef, groupRef là con của treeGroupRef (có rotation)
+        if (group.parent) {
+          group.parent.getWorldQuaternion(parentWorldQuatRef.current);
+          group.quaternion.copy(parentWorldQuatRef.current).invert().multiply(tempQuatRef.current);
+        } else {
+          group.quaternion.copy(tempQuatRef.current);
+        }
       } else if (isFormed) {
-        const targetLookPos = new THREE.Vector3(
-          group.position.x * 2,
-          group.position.y + 0.5,
-          group.position.z * 2
-        );
-        group.lookAt(targetLookPos);
+        group.lookAt(0, group.position.y, 0);
+        group.rotateY(Math.PI);
 
         const wobbleX = Math.sin(time * objData.wobbleSpeed + objData.wobbleOffset) * 0.05;
         const wobbleZ = Math.cos(time * objData.wobbleSpeed * 0.8 + objData.wobbleOffset) * 0.05;
@@ -204,7 +237,9 @@ const PhotoOrnamentsContent = ({ state, photoUrls, zoomState }: PhotoOrnamentsPr
     <group ref={groupRef} renderOrder={100}>
       {data.map((obj, i) => {
         const isZoomed = zoomState?.active && i === nearestIndex;
-        const renderOrder = isZoomed ? 200 : 101; // Tăng renderOrder khi zoom
+        // Tăng renderOrder cao hơn khi zoom để đảm bảo render trước cây và các đối tượng khác
+        // Trong Three.js, renderOrder cao hơn sẽ được vẽ sau (hiển thị trên cùng)
+        const renderOrder = isZoomed ? 999 : 101;
         
         return (
           <group
