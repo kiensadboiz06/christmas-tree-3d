@@ -280,10 +280,13 @@ export const GestureController = ({ onGesture, onStatus, debugMode, onPinch, onT
           position: 'fixed',
           top: 0,
           right: 0,
-          width: debugMode ? '320px' : '1px',
+          width: debugMode ? '200px' : '1px',
+          maxHeight: debugMode ? '150px' : '1px',
           zIndex: debugMode ? 100 : -1,
           pointerEvents: 'none',
-          transform: 'scaleX(-1)'
+          transform: 'scaleX(-1)',
+          borderRadius: debugMode ? '8px' : '0',
+          border: debugMode ? '2px solid rgba(255, 255, 255, 0.3)' : 'none'
         }}
         playsInline
         muted
@@ -295,11 +298,13 @@ export const GestureController = ({ onGesture, onStatus, debugMode, onPinch, onT
           position: 'fixed',
           top: 0,
           right: 0,
-          width: debugMode ? '320px' : '1px',
+          width: debugMode ? '200px' : '1px',
           height: debugMode ? 'auto' : '1px',
+          maxHeight: debugMode ? '150px' : '1px',
           zIndex: debugMode ? 101 : -1,
           pointerEvents: 'none',
-          transform: 'scaleX(-1)'
+          transform: 'scaleX(-1)',
+          borderRadius: debugMode ? '8px' : '0'
         }}
       />
     </>
