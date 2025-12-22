@@ -22,28 +22,16 @@ export const GiftBoxes = ({ state, themeColors, treeStyle }: GiftBoxesProps) => 
     return new Array(count).fill(0).map(() => Math.floor(Math.random() * 5));
   }, [count]);
 
-  // Store chaos positions (only generated once)
-  const chaosPositions = useMemo(() => {
-    return new Array(count).fill(0).map(() => new THREE.Vector3(
-      (Math.random() - 0.5) * 60,
-      (Math.random() - 0.5) * 60,
-      (Math.random() - 0.5) * 60
-    ));
-  }, [count]);
-
-  // Generate target positions based on tree style
-  const targetPositions = useMemo(() => {
-    return new Array(count).fill(0).map(() => {
-      const targetPos = getWeightedTreePosition(0, treeStyle);
-      targetPos.multiplyScalar(0.95);
-      return targetPos;
-    });
-  }, [count, treeStyle]);
-
+  // Data is created once and updated in place
   const data = useMemo<GiftBoxData[]>(() => {
-    return new Array(count).fill(0).map((_, i) => {
-      const chaosPos = chaosPositions[i];
-      const targetPos = targetPositions[i];
+    return new Array(count).fill(0).map(() => {
+      const chaosPos = new THREE.Vector3(
+        (Math.random() - 0.5) * 60,
+        (Math.random() - 0.5) * 60,
+        (Math.random() - 0.5) * 60
+      );
+      const targetPos = getWeightedTreePosition(0, 'classic');
+      targetPos.multiplyScalar(0.95);
 
       const giftColors = CONFIG.colors.metallicGiftColors || CONFIG.colors.giftColors;
       const boxColor = giftColors[Math.floor(Math.random() * giftColors.length)];
@@ -79,14 +67,16 @@ export const GiftBoxes = ({ state, themeColors, treeStyle }: GiftBoxesProps) => 
         timeOffset: Math.random() * Math.PI * 2
       };
     });
-  }, [count, chaosPositions, targetPositions]);
+  }, [count]);
 
-  // Update target positions when tree style changes
+  // Update target positions when tree style changes (in place, no re-render)
   useEffect(() => {
-    data.forEach((objData, i) => {
-      objData.targetPos.copy(targetPositions[i]);
+    data.forEach((objData) => {
+      const newTarget = getWeightedTreePosition(0, treeStyle);
+      newTarget.multiplyScalar(0.95);
+      objData.targetPos.copy(newTarget);
     });
-  }, [targetPositions, data]);
+  }, [treeStyle, data]);
 
   useFrame((stateObj, delta) => {
     if (!groupRef.current) return;

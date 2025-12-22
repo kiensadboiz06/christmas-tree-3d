@@ -18,6 +18,22 @@ interface FairyLightsProps {
   treeStyle: TreeStyle;
 }
 
+// Helper function to generate target position based on style
+const getTargetPosition = (index: number, count: number, style: TreeStyle): THREE.Vector3 => {
+  switch (style) {
+    case 'spiral':
+      return getSpiralLightPosition(index, count);
+    case 'tiered':
+      return getTieredLightPosition(index, count);
+    case 'classic':
+    default:
+      const pos = getWeightedTreePosition();
+      pos.x += 0.3 * Math.cos(Math.random() * Math.PI * 2);
+      pos.z += 0.3 * Math.sin(Math.random() * Math.PI * 2);
+      return pos;
+  }
+};
+
 export const FairyLights = ({ state, themeColors, treeStyle }: FairyLightsProps) => {
   const count = CONFIG.counts.lights;
   const groupRef = useRef<THREE.Group>(null);
@@ -28,38 +44,6 @@ export const FairyLights = ({ state, themeColors, treeStyle }: FairyLightsProps)
     return new Array(count).fill(0).map(() => Math.floor(Math.random() * 4));
   }, [count]);
 
-  // Generate chaos positions (only once)
-  const chaosPositions = useMemo(() => {
-    return new Array(count).fill(0).map(() => getSphericalPosition(40));
-  }, [count]);
-
-  // Generate target positions based on tree style
-  const targetPositions = useMemo(() => {
-    return new Array(count).fill(0).map((_, i) => {
-      let targetPos: THREE.Vector3;
-      
-      switch (treeStyle) {
-        case 'spiral':
-          // Đèn LED dạng dây quấn xoắn ốc
-          targetPos = getSpiralLightPosition(i, count);
-          break;
-        case 'tiered':
-          // Đèn phân bố theo các tầng
-          targetPos = getTieredLightPosition(i, count);
-          break;
-        case 'classic':
-        default:
-          // Phân bố ngẫu nhiên trên cây
-          targetPos = getWeightedTreePosition();
-          targetPos.x += 0.3 * Math.cos(Math.random() * Math.PI * 2);
-          targetPos.z += 0.3 * Math.sin(Math.random() * Math.PI * 2);
-          break;
-      }
-      
-      return targetPos;
-    });
-  }, [count, treeStyle]);
-
   // Store random speeds and time offsets (only generated once)
   const lightSpeeds = useMemo(() => {
     return new Array(count).fill(0).map(() => 2 + Math.random() * 3);
@@ -69,32 +53,30 @@ export const FairyLights = ({ state, themeColors, treeStyle }: FairyLightsProps)
     return new Array(count).fill(0).map(() => Math.random() * 100);
   }, [count]);
 
+  // Data is created once and updated in place
   const data = useMemo<FairyLightData[]>(() => {
     return new Array(count).fill(0).map((_, i) => {
-      const chaosPos = chaosPositions[i];
-      const targetPos = targetPositions[i];
-      
-      // Use theme colors directly
-      const colorIndex = colorIndices[i] % themeColors.lights.length;
-      const color = themeColors.lights[colorIndex];
+      const chaosPos = getSphericalPosition(40);
+      const targetPos = getTargetPosition(i, count, 'classic'); // Initial style
       
       return {
         chaosPos,
         targetPos,
-        color,
+        color: '#FFFFFF', // Will be updated by effect
         speed: lightSpeeds[i],
         currentPos: chaosPos.clone(),
         timeOffset: timeOffsets[i]
       };
     });
-  }, [count, chaosPositions, targetPositions, colorIndices, themeColors.lights, lightSpeeds, timeOffsets]);
+  }, [count, lightSpeeds, timeOffsets]);
   
-  // Update target positions when tree style changes
+  // Update target positions when tree style changes (in place, no re-render)
   useEffect(() => {
     data.forEach((objData, i) => {
-      objData.targetPos.copy(targetPositions[i]);
+      const newTarget = getTargetPosition(i, count, treeStyle);
+      objData.targetPos.copy(newTarget);
     });
-  }, [targetPositions, data]);
+  }, [treeStyle, count, data]);
   
   // Update light colors when theme changes
   useEffect(() => {
@@ -107,7 +89,6 @@ export const FairyLights = ({ state, themeColors, treeStyle }: FairyLightsProps)
         const newColor = themeColors.lights[colorIndex];
         (mesh.material as THREE.MeshStandardMaterial).color.set(newColor);
         (mesh.material as THREE.MeshStandardMaterial).emissive.set(newColor);
-        // Also update data color for reference
         data[i].color = newColor;
       }
     });

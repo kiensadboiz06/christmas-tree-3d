@@ -14,7 +14,7 @@ export const GestureController = ({ onGesture, onStatus, debugMode, onPinch, onT
   // Threshold for hand position change to trigger update (avoid excessive updates)
   const HAND_POSITION_THRESHOLD = 0.02; // 2% of screen
   const THUMB_UP_COOLDOWN = 1500; // 1.5 seconds cooldown for theme change
-  const FINGER_COUNT_COOLDOWN = 1500; // 1.5 seconds cooldown for tree style change
+  const FINGER_COUNT_COOLDOWN = 800; // 0.8 seconds cooldown for tree style change
 
   useEffect(() => {
     let gestureRecognizer: GestureRecognizer;

@@ -21,6 +21,7 @@ interface FoliageProps {
 export const Foliage = ({ state, themeColors, treeStyle }: FoliageProps) => {
   const materialRef = useRef<any>(null);
   const geometryRef = useRef<THREE.BufferGeometry>(null);
+  const targetAttrRef = useRef<THREE.BufferAttribute>(null);
   const count = CONFIG.counts.foliage;
   
   // Store initial chaos positions (only generated once)
@@ -43,28 +44,25 @@ export const Foliage = ({ state, themeColors, treeStyle }: FoliageProps) => {
     return arr;
   }, [count]);
   
-  // Generate target positions based on tree style (regenerate when style changes)
+  // Stable target positions array (only created once)
   const targetPositions = useMemo(() => {
-    const positions = new Float32Array(count * 3);
+    return new Float32Array(count * 3);
+  }, [count]);
+  
+  // Update target positions in place when tree style changes (no re-render)
+  useEffect(() => {
     for (let i = 0; i < count; i++) {
       const [tx, ty, tz] = getTreePositionByStyle(treeStyle);
-      positions[i * 3] = tx;
-      positions[i * 3 + 1] = ty;
-      positions[i * 3 + 2] = tz;
+      targetPositions[i * 3] = tx;
+      targetPositions[i * 3 + 1] = ty;
+      targetPositions[i * 3 + 2] = tz;
     }
-    return positions;
-  }, [count, treeStyle]);
-  
-  // Update geometry when tree style changes
-  useEffect(() => {
-    if (geometryRef.current) {
-      const targetAttr = geometryRef.current.getAttribute('aTargetPos');
-      if (targetAttr) {
-        targetAttr.array.set(targetPositions);
-        targetAttr.needsUpdate = true;
-      }
+    
+    // Mark attribute as needing update
+    if (targetAttrRef.current) {
+      targetAttrRef.current.needsUpdate = true;
     }
-  }, [targetPositions]);
+  }, [treeStyle, count, targetPositions]);
   
   // Update theme color
   useEffect(() => {
@@ -98,6 +96,7 @@ export const Foliage = ({ state, themeColors, treeStyle }: FoliageProps) => {
           args={[chaosPositions, 3]}
         />
         <bufferAttribute
+          ref={targetAttrRef}
           attach='attributes-aTargetPos'
           args={[targetPositions, 3]}
         />

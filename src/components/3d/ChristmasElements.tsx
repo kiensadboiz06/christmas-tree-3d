@@ -23,28 +23,16 @@ export const ChristmasElements = ({ state, themeColors, treeStyle }: ChristmasEl
     return new Array(count).fill(0).map(() => Math.floor(Math.random() * 3));
   }, [count]);
 
-  // Store chaos positions (only generated once)
-  const chaosPositions = useMemo(() => {
-    return new Array(count).fill(0).map(() => new THREE.Vector3(
-      (Math.random() - 0.5) * 60,
-      (Math.random() - 0.5) * 60,
-      (Math.random() - 0.5) * 60
-    ));
-  }, [count]);
-
-  // Generate target positions based on tree style
-  const targetPositions = useMemo(() => {
-    return new Array(count).fill(0).map(() => {
-      const targetPos = getWeightedTreePosition(0, treeStyle);
-      targetPos.multiplyScalar(0.95);
-      return targetPos;
-    });
-  }, [count, treeStyle]);
-
+  // Data is created once and updated in place
   const data = useMemo<ChristmasElementData[]>(() => {
-    return new Array(count).fill(0).map((_, i) => {
-      const chaosPos = chaosPositions[i];
-      const targetPos = targetPositions[i];
+    return new Array(count).fill(0).map(() => {
+      const chaosPos = new THREE.Vector3(
+        (Math.random() - 0.5) * 60,
+        (Math.random() - 0.5) * 60,
+        (Math.random() - 0.5) * 60
+      );
+      const targetPos = getWeightedTreePosition(0, 'classic');
+      targetPos.multiplyScalar(0.95);
 
       // Tất cả đều là quả cầu, chỉ khác màu và tỷ lệ
       const colorType = Math.floor(Math.random() * 3);
@@ -100,14 +88,16 @@ export const ChristmasElements = ({ state, themeColors, treeStyle }: ChristmasEl
         sparkleStartTime
       };
     });
-  }, [count, chaosPositions, targetPositions]);
+  }, [count]);
 
-  // Update target positions when tree style changes
+  // Update target positions when tree style changes (in place, no re-render)
   useEffect(() => {
-    data.forEach((objData, i) => {
-      objData.targetPos.copy(targetPositions[i]);
+    data.forEach((objData) => {
+      const newTarget = getWeightedTreePosition(0, treeStyle);
+      newTarget.multiplyScalar(0.95);
+      objData.targetPos.copy(newTarget);
     });
-  }, [targetPositions, data]);
+  }, [treeStyle, data]);
 
   // Update element colors when theme changes
   useEffect(() => {
