@@ -2,14 +2,16 @@ import { useRef, useEffect } from 'react';
 import { GestureRecognizer, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
 import type { GestureControllerProps } from '../types';
 
-export const GestureController = ({ onGesture, onStatus, debugMode, onPinch }: GestureControllerProps) => {
+export const GestureController = ({ onGesture, onStatus, debugMode, onPinch, onThumbUp }: GestureControllerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastPinchStateRef = useRef<boolean>(false);
   const lastHandPositionRef = useRef<{ x: number; y: number } | undefined>(undefined);
+  const lastThumbUpTimeRef = useRef<number>(0);
   
   // Threshold for hand position change to trigger update (avoid excessive updates)
   const HAND_POSITION_THRESHOLD = 0.02; // 2% of screen
+  const THUMB_UP_COOLDOWN = 1500; // 1.5 seconds cooldown for theme change
 
   useEffect(() => {
     let gestureRecognizer: GestureRecognizer;
@@ -149,6 +151,16 @@ export const GestureController = ({ onGesture, onStatus, debugMode, onPinch }: G
             if (score > 0.4) {
               if (name === 'Open_Palm') onGesture('CHAOS');
               if (name === 'Closed_Fist') onGesture('FORMED');
+              
+              // Detect Thumb_Up gesture for theme change
+              if (name === 'Thumb_Up' && onThumbUp) {
+                const now = Date.now();
+                if (now - lastThumbUpTimeRef.current > THUMB_UP_COOLDOWN) {
+                  lastThumbUpTimeRef.current = now;
+                  onThumbUp();
+                }
+              }
+              
               if (debugMode) {
                 const pinchStatus = isPinching ? ' [PINCH]' : '';
                 onStatus(`DETECTED: ${name}${pinchStatus}`);
@@ -178,7 +190,7 @@ export const GestureController = ({ onGesture, onStatus, debugMode, onPinch }: G
         gestureRecognizer.close();
       }
     };
-  }, [onGesture, onStatus, debugMode, onPinch]);
+  }, [onGesture, onStatus, debugMode, onPinch, onThumbUp]);
 
   return (
     <>

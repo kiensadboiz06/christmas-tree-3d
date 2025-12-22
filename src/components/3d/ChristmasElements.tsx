@@ -1,23 +1,29 @@
 /* eslint-disable */
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CONFIG } from '../../constants/config';
 import { getWeightedTreePosition } from '../../utils/treePositions';
-import type { SceneState, ChristmasElementData } from '../../types';
+import type { SceneState, ChristmasElementData, ThemeColors } from '../../types';
 
 interface ChristmasElementsProps {
   state: SceneState;
+  themeColors: ThemeColors;
 }
 
-export const ChristmasElements = ({ state }: ChristmasElementsProps) => {
+export const ChristmasElements = ({ state, themeColors }: ChristmasElementsProps) => {
   const count = CONFIG.counts.elements;
   const groupRef = useRef<THREE.Group>(null);
 
   const sphereGeometry = useMemo(() => new THREE.SphereGeometry(1, 16, 16), []);
+  
+  // Store color indices for mapping to theme colors
+  const colorIndices = useMemo(() => {
+    return new Array(count).fill(0).map(() => Math.floor(Math.random() * 3));
+  }, [count]);
 
   const data = useMemo<ChristmasElementData[]>(() => {
-    return new Array(count).fill(0).map(() => {
+    return new Array(count).fill(0).map((_, i) => {
       const chaosPos = new THREE.Vector3(
         (Math.random() - 0.5) * 60,
         (Math.random() - 0.5) * 60,
@@ -81,7 +87,23 @@ export const ChristmasElements = ({ state }: ChristmasElementsProps) => {
         sparkleStartTime
       };
     });
-  }, [sphereGeometry]);
+  }, [count]);
+
+  // Update element colors when theme changes
+  useEffect(() => {
+    if (!groupRef.current) return;
+    
+    groupRef.current.children.forEach((child, i) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.material) {
+        const colorIndex = colorIndices[i] % themeColors.giftColors.length;
+        const newColor = themeColors.giftColors[colorIndex];
+        (mesh.material as THREE.MeshStandardMaterial).color.set(newColor);
+        // Also update data for sparkle effects
+        data[i].color = newColor;
+      }
+    });
+  }, [themeColors.giftColors, colorIndices, data]);
 
   useFrame((stateObj, delta) => {
     if (!groupRef.current) return;
@@ -112,7 +134,7 @@ export const ChristmasElements = ({ state }: ChristmasElementsProps) => {
           const sparkleScale = 1.0 + sparkle * 0.3;
           mesh.scale.setScalar(objData.scale * sparkleScale);
           
-          const goldTint = new THREE.Color(CONFIG.colors.gold);
+          const goldTint = new THREE.Color(themeColors.gold);
           goldTint.lerp(new THREE.Color(objData.color), 1 - sparkle * 0.8);
           material.emissive = goldTint;
         } else {

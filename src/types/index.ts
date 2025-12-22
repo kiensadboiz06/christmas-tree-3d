@@ -95,5 +95,19 @@ export interface GestureControllerProps {
   onStatus: (status: string) => void;
   debugMode: boolean;
   onPinch?: (isPinching: boolean, handPosition?: { x: number; y: number }) => void;
+  onThumbUp?: () => void;
+}
+
+// Theme types
+export type ThemeType = 'christmas' | 'pink' | 'purple' | 'blue';
+
+export interface ThemeColors {
+  primary: string;        // Màu chính (lá cây)
+  secondary: string;      // Màu phụ
+  accent: string;         // Màu nhấn
+  gold: string;           // Màu vàng
+  lights: string[];       // Màu đèn
+  giftColors: string[];   // Màu hộp quà
+  metallicGiftColors: string[];
 }
 

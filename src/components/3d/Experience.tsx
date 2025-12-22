@@ -7,16 +7,17 @@ import { FairyLights } from './FairyLights';
 import { GiftBoxes } from './GiftBoxes';
 import { TopStar } from './TopStar';
 import { ExperienceLights } from './ExperienceLights';
-import type { SceneState, ZoomState } from '../../types';
+import type { SceneState, ZoomState, ThemeColors } from '../../types';
 import * as THREE from 'three';
 
 interface ExperienceProps {
   sceneState: SceneState;
   photoUrls: string[];
   zoomState?: ZoomState;
+  themeColors: ThemeColors;
 }
 
-export const Experience = ({ sceneState, photoUrls, zoomState }: ExperienceProps) => {
+export const Experience = ({ sceneState, photoUrls, zoomState, themeColors }: ExperienceProps) => {
   const treeGroupRef = useRef<THREE.Group>(null);
 
   // Quay cây chậm liên tục - dừng khi đang zoom
@@ -31,12 +32,12 @@ export const Experience = ({ sceneState, photoUrls, zoomState }: ExperienceProps
       <ExperienceLights sceneState={sceneState} zoomState={zoomState} />
 
       <group ref={treeGroupRef} position={[0, -2, 0]}>
-        <Foliage state={sceneState} />
+        <Foliage state={sceneState} themeColors={themeColors} />
         <Suspense fallback={null}>
-          <ChristmasElements state={sceneState} />
-          <FairyLights state={sceneState} />
-          <GiftBoxes state={sceneState} />
-          <TopStar state={sceneState} />
+          <ChristmasElements state={sceneState} themeColors={themeColors} />
+          <FairyLights state={sceneState} themeColors={themeColors} />
+          <GiftBoxes state={sceneState} themeColors={themeColors} />
+          <TopStar state={sceneState} themeColors={themeColors} />
           {/* Render ảnh sau cùng để nổi lên trên */}
           <PhotoOrnaments 
             key={photoUrls?.length || 0} 

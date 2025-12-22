@@ -1,19 +1,25 @@
 /* eslint-disable */
 // @ts-nocheck
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CONFIG } from '../../constants/config';
 import { getWeightedTreePosition } from '../../utils/treePositions';
-import type { SceneState, GiftBoxData } from '../../types';
+import type { SceneState, GiftBoxData, ThemeColors } from '../../types';
 
 interface GiftBoxesProps {
   state: SceneState;
+  themeColors: ThemeColors;
 }
 
-export const GiftBoxes = ({ state }: GiftBoxesProps) => {
+export const GiftBoxes = ({ state, themeColors }: GiftBoxesProps) => {
   const count = CONFIG.counts.gifts;
   const groupRef = useRef<THREE.Group>(null);
+
+  // Store color indices for mapping to theme colors
+  const colorIndices = useMemo(() => {
+    return new Array(count).fill(0).map(() => Math.floor(Math.random() * 5));
+  }, [count]);
 
   const data = useMemo<GiftBoxData[]>(() => {
     return new Array(count).fill(0).map(() => {
@@ -60,7 +66,7 @@ export const GiftBoxes = ({ state }: GiftBoxesProps) => {
         timeOffset: Math.random() * Math.PI * 2
       };
     });
-  }, []);
+  }, [count]);
 
   useFrame((stateObj, delta) => {
     if (!groupRef.current) return;
@@ -94,12 +100,36 @@ export const GiftBoxes = ({ state }: GiftBoxesProps) => {
   const ribbonMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: CONFIG.colors.gold,
+        color: themeColors.gold,
         roughness: 0.15,
         metalness: 1.0
       }),
     []
   );
+
+  // Update colors when theme changes
+  useEffect(() => {
+    // Update ribbon color
+    ribbonMaterial.color.set(themeColors.gold);
+    
+    // Update gift box colors
+    if (!groupRef.current) return;
+    
+    groupRef.current.children.forEach((group, i) => {
+      const giftGroup = group as THREE.Group;
+      // First child is the main box
+      if (giftGroup.children[0]) {
+        const boxMesh = giftGroup.children[0] as THREE.Mesh;
+        if (boxMesh.material) {
+          const colorIndex = colorIndices[i] % themeColors.metallicGiftColors.length;
+          const newColor = themeColors.metallicGiftColors[colorIndex];
+          (boxMesh.material as THREE.MeshStandardMaterial).color.set(newColor);
+          // Update data for reference
+          data[i].boxColor = newColor;
+        }
+      }
+    });
+  }, [themeColors, colorIndices, data, ribbonMaterial]);
 
   return (
     <group ref={groupRef}>

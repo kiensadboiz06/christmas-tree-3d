@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Experience } from './components/3d';
 import { GestureController } from './components/GestureController';
 import { DebugButton, StatusText, AddPhotoButton, uiStyles } from './components/UI';
-import { useSceneState, useDebugMode, useAIStatus, usePhotos, useZoomState } from './hooks';
+import { useSceneState, useDebugMode, useAIStatus, usePhotos, useZoomState, useTheme } from './hooks';
 
 export default function GrandTreeApp() {
   const { sceneState, setSceneState, toggleSceneState } = useSceneState();
@@ -11,6 +11,7 @@ export default function GrandTreeApp() {
   const { aiStatus, setAiStatus } = useAIStatus();
   const { photos, addPhotos } = usePhotos();
   const { zoomState, handlePinch } = useZoomState();
+  const { themeColors, cycleTheme } = useTheme();
 
   const handlePhotosAdded = (files: FileList) => {
     addPhotos(files).catch((error) => {
@@ -28,7 +29,7 @@ export default function GrandTreeApp() {
           dpr={[1, 2]}
           gl={{ toneMapping: THREE.ReinhardToneMapping }}
           shadows>
-          <Experience sceneState={sceneState} photoUrls={photos} zoomState={zoomState} />
+          <Experience sceneState={sceneState} photoUrls={photos} zoomState={zoomState} themeColors={themeColors} />
         </Canvas>
       </div>
 
@@ -37,6 +38,7 @@ export default function GrandTreeApp() {
         onStatus={setAiStatus}
         debugMode={debugMode}
         onPinch={handlePinch}
+        onThumbUp={cycleTheme}
       />
 
       <div style={uiStyles.buttonContainer}>

@@ -1,17 +1,18 @@
 /* eslint-disable */
 // @ts-nocheck
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { CONFIG } from '../../constants/config';
-import type { SceneState } from '../../types';
+import type { SceneState, ThemeColors } from '../../types';
 
 interface TopStarProps {
   state: SceneState;
+  themeColors: ThemeColors;
 }
 
-export const TopStar = ({ state }: TopStarProps) => {
+export const TopStar = ({ state, themeColors }: TopStarProps) => {
   const groupRef = useRef<THREE.Group>(null);
 
   const starShape = useMemo(() => {
@@ -44,14 +45,20 @@ export const TopStar = ({ state }: TopStarProps) => {
   const goldMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: CONFIG.colors.gold,
-        emissive: CONFIG.colors.gold,
+        color: themeColors.gold,
+        emissive: themeColors.gold,
         emissiveIntensity: 1.5,
         roughness: 0.1,
         metalness: 1.0
       }),
     []
   );
+
+  // Update star color when theme changes
+  useEffect(() => {
+    goldMaterial.color.set(themeColors.gold);
+    goldMaterial.emissive.set(themeColors.gold);
+  }, [themeColors.gold, goldMaterial]);
 
   useFrame((_, delta) => {
     if (groupRef.current) {

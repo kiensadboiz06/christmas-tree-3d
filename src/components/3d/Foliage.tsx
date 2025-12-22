@@ -1,6 +1,6 @@
 /* eslint-disable */
 // @ts-nocheck
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useFrame, extend } from '@react-three/fiber';
 import * as THREE from 'three';
 import { MathUtils } from 'three';
@@ -8,15 +8,16 @@ import * as random from 'maath/random';
 import { FoliageMaterial } from '../../shaders/FoliageMaterial';
 import { getTreePosition } from '../../utils/treePositions';
 import { CONFIG } from '../../constants/config';
-import type { SceneState } from '../../types';
+import type { SceneState, ThemeColors } from '../../types';
 
 extend({ FoliageMaterial });
 
 interface FoliageProps {
   state: SceneState;
+  themeColors: ThemeColors;
 }
 
-export const Foliage = ({ state }: FoliageProps) => {
+export const Foliage = ({ state, themeColors }: FoliageProps) => {
   const materialRef = useRef<any>(null);
   
   const { positions, targetPositions, randoms } = useMemo(() => {
@@ -42,6 +43,13 @@ export const Foliage = ({ state }: FoliageProps) => {
     return { positions, targetPositions, randoms };
   }, []);
   
+  // Update theme color
+  useEffect(() => {
+    if (materialRef.current) {
+      materialRef.current.uColor = new THREE.Color(themeColors.primary);
+    }
+  }, [themeColors.primary]);
+
   useFrame((rootState, delta) => {
     if (materialRef.current) {
       materialRef.current.uTime = rootState.clock.elapsedTime;
@@ -52,6 +60,10 @@ export const Foliage = ({ state }: FoliageProps) => {
         1.5,
         delta
       );
+      
+      // Smoothly interpolate color
+      const targetColor = new THREE.Color(themeColors.primary);
+      materialRef.current.uColor.lerp(targetColor, delta * 2);
     }
   });
   

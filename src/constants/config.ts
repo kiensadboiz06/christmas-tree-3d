@@ -1,4 +1,47 @@
-import type { Config } from '../types';
+import type { Config, ThemeColors, ThemeType } from '../types';
+
+// Theme presets
+export const THEMES: Record<ThemeType, ThemeColors> = {
+  christmas: {
+    primary: '#004225',      // Xanh ngọc bích - lá cây
+    secondary: '#D32F2F',    // Đỏ
+    accent: '#FFD700',       // Vàng
+    gold: '#FFD700',
+    lights: ['#FF0000', '#00FF00', '#FFFF00'],
+    giftColors: ['#D32F2F', '#FFD700', '#2E7D32'],
+    metallicGiftColors: ['#C41E3A', '#228B22', '#FFD700', '#FF69B4', '#C0C0C0']
+  },
+  pink: {
+    primary: '#FF69B4',      // Hồng đậm - lá cây
+    secondary: '#FFB6C1',    // Hồng nhạt
+    accent: '#FF1493',       // Deep pink
+    gold: '#FFC0CB',         // Pink gold
+    lights: ['#FF69B4', '#FFB6C1', '#FF1493', '#FFC0CB'],
+    giftColors: ['#FF69B4', '#FFB6C1', '#FF1493'],
+    metallicGiftColors: ['#FF69B4', '#FFB6C1', '#FF1493', '#DB7093', '#FFC0CB']
+  },
+  purple: {
+    primary: '#6B21A8',      // Tím đậm - lá cây
+    secondary: '#A855F7',    // Tím sáng
+    accent: '#E9D5FF',       // Tím nhạt
+    gold: '#DDA0DD',         // Plum
+    lights: ['#8B5CF6', '#A855F7', '#C084FC', '#E9D5FF'],
+    giftColors: ['#6B21A8', '#8B5CF6', '#A855F7'],
+    metallicGiftColors: ['#6B21A8', '#8B5CF6', '#A855F7', '#9333EA', '#C084FC']
+  },
+  blue: {
+    primary: '#0284C7',      // Xanh lam đậm - lá cây
+    secondary: '#38BDF8',    // Xanh lam sáng
+    accent: '#E0F2FE',       // Xanh nhạt
+    gold: '#67E8F9',         // Cyan
+    lights: ['#0EA5E9', '#38BDF8', '#7DD3FC', '#BAE6FD'],
+    giftColors: ['#0284C7', '#0EA5E9', '#38BDF8'],
+    metallicGiftColors: ['#0284C7', '#0EA5E9', '#38BDF8', '#0369A1', '#7DD3FC']
+  }
+};
+
+// Theme order for cycling
+export const THEME_ORDER: ThemeType[] = ['christmas', 'pink', 'purple', 'blue'];
 
 export const CONFIG: Config = {
   colors: {

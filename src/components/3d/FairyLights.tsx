@@ -1,23 +1,29 @@
 /* eslint-disable */
 // @ts-nocheck
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { CONFIG } from '../../constants/config';
 import { getSphericalPosition, getWeightedTreePosition } from '../../utils/treePositions';
-import type { SceneState, FairyLightData } from '../../types';
+import type { SceneState, FairyLightData, ThemeColors } from '../../types';
 
 interface FairyLightsProps {
   state: SceneState;
+  themeColors: ThemeColors;
 }
 
-export const FairyLights = ({ state }: FairyLightsProps) => {
+export const FairyLights = ({ state, themeColors }: FairyLightsProps) => {
   const count = CONFIG.counts.lights;
   const groupRef = useRef<THREE.Group>(null);
   const geometry = useMemo(() => new THREE.SphereGeometry(0.8, 8, 8), []);
 
+  // Store color indices for each light to map to theme colors
+  const colorIndices = useMemo(() => {
+    return new Array(count).fill(0).map(() => Math.floor(Math.random() * 4));
+  }, [count]);
+
   const data = useMemo<FairyLightData[]>(() => {
-    return new Array(count).fill(0).map(() => {
+    return new Array(count).fill(0).map((_, i) => {
       // Tỏa ra theo hình cầu với bán kính 40
       const chaosPos = getSphericalPosition(40);
       
@@ -39,7 +45,22 @@ export const FairyLights = ({ state }: FairyLightsProps) => {
         timeOffset: Math.random() * 100
       };
     });
-  }, []);
+  }, [count]);
+  
+  // Update light colors when theme changes
+  useEffect(() => {
+    if (!groupRef.current) return;
+    
+    groupRef.current.children.forEach((child, i) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.material) {
+        const colorIndex = colorIndices[i] % themeColors.lights.length;
+        const newColor = themeColors.lights[colorIndex];
+        (mesh.material as THREE.MeshStandardMaterial).color.set(newColor);
+        (mesh.material as THREE.MeshStandardMaterial).emissive.set(newColor);
+      }
+    });
+  }, [themeColors.lights, colorIndices]);
 
   useFrame((stateObj, delta) => {
     if (!groupRef.current) return;
